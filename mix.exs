@@ -24,8 +24,8 @@ defmodule DNS.Mixfile do
 
   defp deps do
     [
-      {:ex_doc, ">= 0.0.0", only: [:dev], runtime: false},
-      {:credo, "~> 0.9.0-rc1", only: [:dev, :test], runtime: false}
+      {:ex_doc, "~> 0.35", only: [:dev], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 

@@ -5,6 +5,8 @@ defmodule DNS do
           | {:alt_nameservers, [nameserver()]}
           | {:nameservers, [nameserver()]}
   # :inet_res.rr_type is not exported
+  @type resolve_error :: :inet_res.res_error() | :not_found
+
   @type rr_type ::
           :a
           | :aaaa
@@ -51,7 +53,8 @@ defmodule DNS do
 
   """
   @spec resolve(String.t(), rr_type(), [res_option()], timeout()) ::
-          {:ok, list()} | {:error, :inet_res.res_error()}
+          {:ok, list()} | {:error, resolve_error()}
+
   def resolve(domain, type \\ :a, opts \\ [], timeout \\ :infinity) do
     case query(domain, type, opts, timeout) do
       {:ok, %DNS.Record{anlist: anlist}} when is_list(anlist) and length(anlist) > 0 ->
@@ -92,6 +95,8 @@ defmodule DNS do
 
       iex> DNS.query("tungdao.com", :a, nameservers: [{"8.8.4.4", 53}], usevc: true)
 
+  Returns a standard error tuple on failure, dropping the more complex
+  possible return types that the underlying OTP libraries provide.
   """
   @spec query(String.t(), rr_type(), [res_option()], timeout()) ::
           {:ok, DNS.Record.t()} | {:error, :inet_res.res_error()}
@@ -100,8 +105,11 @@ defmodule DNS do
       {:ok, response} ->
         {:ok, DNS.Record.from_record(response)}
 
-      {:error, error} ->
-        {:error, error}
+      {:error, {reason, _response}} ->
+        {:error, reason}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

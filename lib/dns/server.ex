@@ -3,7 +3,7 @@ defmodule DNS.Server do
   DNS server based on `GenServer`.
   """
 
-  @callback handle(DNS.Record.t(), {:inet.ip(), :inet.port()}) :: DNS.Record.t()
+  @callback handle(DNS.Record.t(), {:inet.ip_address(), :inet.port_number()}) :: DNS.Record.t()
 
   defmacro __using__(_) do
     quote [] do

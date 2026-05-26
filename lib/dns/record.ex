@@ -21,7 +21,14 @@ defmodule DNS.Record do
     additional = Enum.map(struct.arlist, &DNS.Resource.to_record/1)
     authority = Enum.map(struct.nslist, &DNS.Resource.to_record/1)
 
-    _to_record(%{struct | header: header, qdlist: queries, anlist: answers, nslist: authority, arlist: additional})
+    _to_record(%{
+      struct
+      | header: header,
+        qdlist: queries,
+        anlist: answers,
+        nslist: authority,
+        arlist: additional
+    })
   end
 
   defp _to_record(%DNS.Record{unquote_splicing(pairs)}) do

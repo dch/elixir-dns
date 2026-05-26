@@ -1,14 +1,36 @@
 defmodule DNS do
-
   @type nameserver :: {String.t(), port :: 1..65535}
   @type res_option ::
-  :inet_res.res_option()
-  | {:alt_nameservers, [nameserver()]}
-  | {:nameservers, [nameserver()]}
+          :inet_res.res_option()
+          | {:alt_nameservers, [nameserver()]}
+          | {:nameservers, [nameserver()]}
   # :inet_res.rr_type is not exported
-  @type rr_type :: :a | :aaaa | :caa | :cname | :gid | :hinfo | :ns | :mb | :md | :mg
-  | :mf | :minfo | :mx | :naptr | :null | :ptr | :soa | :spf | :srv
-  | :txt | :uid | :uinfo | :unspec | :uri | :wks
+  @type rr_type ::
+          :a
+          | :aaaa
+          | :caa
+          | :cname
+          | :gid
+          | :hinfo
+          | :ns
+          | :mb
+          | :md
+          | :mg
+          | :mf
+          | :minfo
+          | :mx
+          | :naptr
+          | :null
+          | :ptr
+          | :soa
+          | :spf
+          | :srv
+          | :txt
+          | :uid
+          | :uinfo
+          | :unspec
+          | :uri
+          | :wks
 
   @doc """
   Resolves the answer for a DNS query.
@@ -28,7 +50,8 @@ defmodule DNS do
       {:ok, [{1, 1, 1, 1}]}
 
   """
-  @spec resolve(String.t(), rr_type(), [res_option()], timeout()) :: {:ok, list()} | {:error, :inet_res.res_error()}
+  @spec resolve(String.t(), rr_type(), [res_option()], timeout()) ::
+          {:ok, list()} | {:error, :inet_res.res_error()}
   def resolve(domain, type \\ :a, opts \\ [], timeout \\ :infinity) do
     case query(domain, type, opts, timeout) do
       {:ok, %DNS.Record{anlist: anlist}} when is_list(anlist) and length(anlist) > 0 ->
@@ -70,7 +93,8 @@ defmodule DNS do
       iex> DNS.query("tungdao.com", :a, nameservers: [{"8.8.4.4", 53}], usevc: true)
 
   """
-  @spec query(String.t(), rr_type(), [res_option()], timeout()) :: {:ok, DNS.Record.t()} | {:error, :inet_res.res_error()}
+  @spec query(String.t(), rr_type(), [res_option()], timeout()) ::
+          {:ok, DNS.Record.t()} | {:error, :inet_res.res_error()}
   def query(name, type \\ :a, opts \\ [], timeout \\ :infinity) do
     case :inet_res.resolve(to_charlist(name), :in, type, transform_opts(opts), timeout) do
       {:ok, response} ->
@@ -85,10 +109,13 @@ defmodule DNS do
     Enum.map(opts, fn {key, value} -> {key, transform_opt(key, value)} end)
   end
 
-  defp transform_opt(key, nameservers) when key in [:alt_nameservers, :nameservers] and is_list(nameservers) do
+  defp transform_opt(key, nameservers)
+       when key in [:alt_nameservers, :nameservers] and is_list(nameservers) do
     Enum.map(nameservers, fn {nameserver, port} ->
       case nameserver do
-        n when is_tuple(n) -> {n, port}
+        n when is_tuple(n) ->
+          {n, port}
+
         n when is_binary(n) ->
           {:ok, address} = :inet.parse_address(to_charlist(n))
           {address, port}

@@ -11,28 +11,42 @@ defmodule DNS do
           :a
           | :aaaa
           | :caa
+          | :cdnskey
+          | :cds
           | :cname
+          | :dnskey
+          | :ds
           | :gid
           | :hinfo
-          | :ns
+          | :https
           | :mb
           | :md
-          | :mg
           | :mf
+          | :mg
           | :minfo
           | :mx
           | :naptr
+          | :ns
+          | :nsec
+          | :nsec3
+          | :nsec3param
           | :null
           | :ptr
+          | :rrsig
           | :soa
           | :spf
           | :srv
+          | :sshfp
+          | :svcb
+          | :tlsa
           | :txt
           | :uid
           | :uinfo
           | :unspec
           | :uri
           | :wks
+          # Raw integer RR types unsupported by :inet_res atoms.
+          | integer()
 
   @doc """
   Resolves the answer for a DNS query.
@@ -101,7 +115,13 @@ defmodule DNS do
   @spec query(String.t(), rr_type(), [res_option()], timeout()) ::
           {:ok, DNS.Record.t()} | {:error, :inet_res.res_error()}
   def query(name, type \\ :a, opts \\ [], timeout \\ :infinity) do
-    case :inet_res.resolve(to_charlist(name), :in, type, transform_opts(opts), timeout) do
+    case :inet_res.resolve(
+           to_charlist(name),
+           :in,
+           encode_type(type),
+           transform_opts(opts),
+           timeout
+         ) do
       {:ok, response} ->
         {:ok, DNS.Record.from_record(response)}
 
@@ -111,6 +131,35 @@ defmodule DNS do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  # RFC-defined RR type numbers not exposed by :inet_res (see inet_dns.hrl).
+  # Only types listed here are translated; all other atoms/integers pass through.
+  @rr_type_numbers %{
+    cdnskey: 60,
+    cds: 59,
+    dnskey: 48,
+    ds: 43,
+    https: 65,
+    nsec: 47,
+    nsec3: 50,
+    nsec3param: 51,
+    rrsig: 46,
+    sshfp: 44,
+    svcb: 64,
+    tlsa: 52
+  }
+
+  @doc """
+  Maps an atom RR type to the integer value `:inet_res.resolve/5` expects.
+
+  DNSSEC and related RR types listed in `@rr_type_numbers` are translated
+  because OTP's `:inet_res` does not expose them as atoms. All other atoms and
+  integers are passed through unchanged.
+  """
+  @spec encode_type(rr_type()) :: atom() | integer()
+  def encode_type(type) do
+    Map.get(@rr_type_numbers, type, type)
   end
 
   defp transform_opts(opts) do
